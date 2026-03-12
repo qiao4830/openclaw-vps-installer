@@ -1,51 +1,69 @@
-# OpenClaw VPS Installer
+# ⛵ OpenClaw Nautical Pro Installer
 
-适用于 **1G / 2G RAM 小内存 VPS** 的 OpenClaw 一键部署脚本。  
-本项目不重写 OpenClaw 的核心安装逻辑，而是负责完成 VPS 环境准备，然后调用 **OpenClaw 官方 Installer** 完成安装，这样更稳、更容易兼容后续版本更新。[web:34][web:37]
+适用于 **1G / 2G RAM VPS** 的 OpenClaw 一键部署脚本。  
+脚本负责完成基础环境优化，然后调用 **OpenClaw 官方 Installer** 进行安装，尽量保持与官方流程一致。
 
-## 项目定位
+## 特性
 
-这个脚本主要解决下面几个问题：
-
-- 小内存 VPS 安装时容易因为内存不足卡住或失败。
-- 新手用户不想手动处理 Swap、基础依赖、网络预检这些步骤。
-- 民间“手搓 git clone + npm build”方案容易和官方流程脱节，后续版本更新容易坏掉。[web:34]
-
-所以本仓库的目标很简单：
-
-- 帮你准备好 VPS 环境。
-- 尽量做到一键化。
-- **OpenClaw 本体安装仍然交给官方 installer**。[web:37][web:102]
-
----
-
-## 特点
-
-- 针对 **1G / 2G RAM VPS** 做了轻量优化。
-- 自动检查并创建 **1G Swap**，减少小内存机器安装失败概率。
-- 可选启用 **BBR** 网络优化。
-- 安装过程采用 **OpenClaw 官方 installer**，而不是自己维护一套非官方源码构建流程。[web:34][web:37]
-- 支持 **静默安装**，适合服务器一键部署。[web:34]
-- 尽量避免直接破坏系统托管配置，比如不粗暴覆盖 `/etc/resolv.conf`。[web:34]
-
----
+- 自动创建 **1GB Swap**
+- 可选启用 **BBR**
+- 自动检查网络与 DNS
+- 使用 **官方 installer**
+- 支持 **静默安装**
 
 ## 适用环境
 
-- Ubuntu / Debian VPS。
-- 推荐全新系统环境。
-- 推荐 1C1G、1C2G、2C2G 及以上机型。
-- 服务器需要能够正常访问外网，并能解析 `openclaw.ai`。[web:37]
+- Ubuntu / Debian
+- 1C1G、1C2G 及以上 VPS
+- 需要可访问外网并解析 `openclaw.ai`
+- OpenClaw 需要 **Node 22+**，官方 installer 会自动处理
 
-> 说明：OpenClaw 官方要求 **Node 22 或更高版本**，官方 installer 会自动检测并在缺失时安装，所以本脚本不再自己手搓 Node 安装流程。[web:37][web:83]
+## 安装
 
----
+    curl -fsSL https://raw.githubusercontent.com/qiao4830/openclaw-vps-installer/main/openclaw-lite.sh -o openclaw-lite.sh && chmod +x openclaw-lite.sh && sudo bash openclaw-lite.sh
 
-## 安装方式
+## 可选模式
 
-### 默认安装
+使用 npm 安装：
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/你的用户名/qia4830/openclaw-vps-installer.sh -o openclaw-vps-installer.sh
-chmod +x openclaw-vps-installer.sh
-sudo bash openclaw-vps-installer.sh
+    sudo OPENCLAW_INSTALL_METHOD=npm bash openclaw-lite.sh
+
+使用 git 安装：
+
+    sudo OPENCLAW_INSTALL_METHOD=git bash openclaw-lite.sh
+
+指定源码目录：
+
+    sudo OPENCLAW_INSTALL_METHOD=git OPENCLAW_GIT_DIR=/opt/openclaw bash openclaw-lite.sh
+
+
+## 常见问题
+
+**DNS 解析失败怎么办？**  
+先检查：
+    getent hosts openclaw.ai
+    resolvectl status
+    systemctl status systemd-resolved
+
+不建议直接覆盖 `/etc/resolv.conf`，因为很多系统会自动托管这个文件。
+
+**为什么不手搓 `git clone && npm install && npm run build`？**  
+因为官方 installer 已经支持更完整的自动化安装流程，兼容性通常更好。
+
+## 安装后
+    openclaw --help
+    node -v
+
+如需首次初始化：
+    openclaw onboard --install-daemon
+
+## 链接
+
+- 官方网站：https://openclaw.ai
+- 官方文档：https://docs.openclaw.ai/install
+- YouTube：https://www.youtube.com/@cnxiaofanchuan
+
+## 声明
+
+这是第三方 VPS 自动化封装脚本，不是 OpenClaw 官方项目。  
+OpenClaw 本体安装行为以官方文档为准。

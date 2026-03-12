@@ -133,26 +133,43 @@ run_openclaw_installer() {
 post_check() {
   log "执行安装后检查..."
 
-  if command -v openclaw >/dev/null 2>&1; then
-    ok "检测到 openclaw 命令：$(command -v openclaw)"
-  else
-    warn "未在当前 shell 检测到 openclaw 命令，重新登录 SSH 后再试。"
-  fi
+  export PATH="/usr/local/bin:/usr/bin:/bin:$PATH"
 
-  if command -v node >/dev/null 2>&1; then
-    ok "Node 版本：$(node -v)"
+  OPENCLAW_BIN="$(command -v openclaw || true)"
+
+  if [[ -n "${OPENCLAW_BIN}" ]]; then
+    ok "检测到 openclaw 命令：${OPENCLAW_BIN}"
+  else
+    warn "当前 shell 暂未识别 openclaw 命令，建议重新登录 SSH 后再执行。"
   fi
 
   echo
   echo "======================================"
-  echo "OpenClaw 部署完成"
+  echo "         OpenClaw 部署完成！"
   echo "======================================"
-  echo "下一步提示："
-  echo "1) 重新登录 SSH (或输入 source ~/.bashrc) 刷新环境变量"
-  echo "2) 运行: openclaw --help"
-  echo "3) 如需初始化守护进程: openclaw onboard --install-daemon"
+  echo "1) 启动完整初始化向导"
+  echo "2) 仅配置 AI 模型 / API"
+  echo "3) 仅对接 Telegram"
+  echo "4) 退出"
   echo "======================================"
+
+  read -rp "请输入序号 [1-4]: " choice
+
+  if [[ -z "${OPENCLAW_BIN}" && "$choice" != "4" ]]; then
+    warn "当前会话还找不到 openclaw，请先重新登录 SSH 后，再执行 openclaw 相关命令。"
+    return 0
+  fi
+
+  case "$choice" in
+    1) "$OPENCLAW_BIN" onboard ;;
+    2) "$OPENCLAW_BIN" models auth add ;;
+    3) "$OPENCLAW_BIN" channels add ;;
+    4) ok "安装已结束。重新登录后可手动执行 openclaw onboard" 
+    return 0 ;;
+    *) warn "无效选择。" ;;
+  esac
 }
+
 
 main() {
   require_root

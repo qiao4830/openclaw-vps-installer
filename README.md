@@ -20,7 +20,7 @@
 
 ## 安装
 
-    curl -fsSL --proto '=https' --tlsv1.2 https://openclaw.ai/install.sh | bash -s -- --no-onboard
+    curl -fsSL https://raw.githubusercontent.com/qiao4830/openclaw-vps-installer/main/openclaw-lite.sh -o openclaw-lite.sh && chmod +x openclaw-lite.sh && sudo bash openclaw-lite.sh
 
 ## 可选模式
 

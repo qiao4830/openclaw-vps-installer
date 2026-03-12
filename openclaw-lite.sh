@@ -125,7 +125,7 @@ run_openclaw_installer() {
   export OPENCLAW_VERSION
   export OPENCLAW_GIT_DIR
 
-  curl -fsSL --proto '=https' --tlsv1.2 https://openclaw.ai/install.sh | bash
+  curl -fsSL --proto '=https' --tlsv1.2 https://openclaw.ai/install.sh | bash -s -- --no-onboard
 
   ok "官方安装流程执行完成。"
 }

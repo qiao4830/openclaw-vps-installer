@@ -59,11 +59,8 @@ openclaw onboard
 
 运行安装脚本后，终端会弹出一个交互菜单，可直接选择：
     1) 启动完整初始化向导（openclaw onboard）
-    
     2) 仅配置 AI 模型 / API
-    
     3) 仅对接 Telegram
-    
     4) 退出脚本
 
 也可以手动执行：

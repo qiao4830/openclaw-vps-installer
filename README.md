@@ -58,15 +58,16 @@ openclaw onboard
 ## 安装后
 
 运行安装脚本后，终端会弹出一个交互菜单，可直接选择：
-    1) 启动完整初始化向导（openclaw onboard）
-    2) 仅配置 AI 模型 / API
-    3) 仅对接 Telegram
-    4) 退出脚本
+    1) 启动完整初始化向导（openclaw onboard）；
+    2) 仅配置 AI 模型 / API；
+    3) 仅对接 Telegram；
+    4) 退出脚本。
 
 也可以手动执行：
     openclaw --help
     node -v
-    推荐初始化命令：openclaw onboard --install-daemon
+推荐初始化命令：
+    openclaw onboard --install-daemon
 
 如需再次初始化：
     openclaw onboard --install-daemon

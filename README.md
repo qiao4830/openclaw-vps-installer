@@ -10,6 +10,7 @@
 - 自动检查网络与 DNS
 - 使用 **官方 installer**
 - 支持 **静默安装**
+- 安装完成后自动弹出菜单，可一键运行 openclaw onboard / 模型配置 / Telegram 对接
 
 ## 适用环境
 
@@ -50,11 +51,24 @@
 **为什么不手搓 `git clone && npm install && npm run build`？**  
 因为官方 installer 已经支持更完整的自动化安装流程，兼容性通常更好。
 
+**安装结束后提示找不到 openclaw 命令怎么办？**  
+这是因为当前 SSH 会话还没刷新 PATH。重新登录一次 SSH，或者开一个新的终端，再执行：
+openclaw onboard
+
 ## 安装后
+
+运行安装脚本后，终端会弹出一个交互菜单，可直接选择：
+    1) 启动完整初始化向导（openclaw onboard）
+    2) 仅配置 AI 模型 / API
+    3) 仅对接 Telegram
+    4) 退出脚本
+
+也可以手动执行：
     openclaw --help
     node -v
+    推荐初始化命令：openclaw onboard --install-daemon
 
-如需首次初始化：
+如需再次初始化：
     openclaw onboard --install-daemon
 
 ## 链接

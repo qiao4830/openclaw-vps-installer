@@ -112,9 +112,13 @@ install_base_packages() {
   log "安装基础依赖..."
   export DEBIAN_FRONTEND=noninteractive
   apt-get update -y
-  apt-get install -y curl ca-certificates git wget procps iproute2 dnsutils
+  apt-get install -y curl ca-certificates git wget procps iproute2 dnsutils build-essential
+  # 自动装新版 CMake (Ubuntu 20.04 兼容)
+  snap install cmake --classic || true
+  export PATH="/snap/bin:$PATH"
   ok "基础依赖已安装。"
 }
+
 
 run_openclaw_installer() {
   log "开始执行官方 OpenClaw Installer..."

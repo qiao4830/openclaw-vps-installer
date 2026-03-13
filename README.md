@@ -66,6 +66,7 @@ openclaw onboard
 也可以手动执行：
     openclaw --help
     node -v
+
 推荐初始化命令：
     openclaw onboard --install-daemon
 

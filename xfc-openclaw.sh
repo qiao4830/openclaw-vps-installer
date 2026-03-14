@@ -5,9 +5,14 @@
 # ║             小帆船 (cnxiaofanchuan) - 航海员专用脚本               ║
 # ║                                                                  ║
 # ╠══════════════════════════════════════════════════════════════════╣
-# ║  版本：v1.2.0 | 适配 1G 内存 | 快捷键：xfc | 纯净/避坑/稳定         ║
+# ║  版本：v1.2.1 | 适配 1G 内存 | 快捷键：xfc | 纯净/避坑/稳定         ║
 # ║  YouTube : @cnxiaofanchuan  |  Telegram: t.me/vipxiaofanchuan    ║
 # ╚══════════════════════════════════════════════════════════════════╝
+
+# 0. Root 检查 (ChatGPT 建议)
+if [ "$(id -u)" -ne 0 ]; then 
+    echo "请使用 root 用户运行 (sudo bash $0)"; exit 1
+fi
 
 # --- 1. 颜色与基础变量 ---
 : "${xfc_hong:='\033[31m'}"    
@@ -16,45 +21,46 @@
 : "${xfc_lan:='\033[96m'}"      
 : "${xfc_bai:='\033[0m'}"       
 
-# --- 2. 五大生存维度检查 ---
+# --- 2. 系统深度检查 ---
 xfc_system_check() {
     clear
-    echo -e "${xfc_lan}>>> 正在执行小帆船专属系统安检...${xfc_bai}"
+    echo -e "${xfc_lan}>>> 正在执行系统安检与环境优化...${xfc_bai}"
+
+    # [内存] Swap 开启
     local mem_total=$(free -m | grep Mem | awk '{print $2}')
     if [ "$mem_total" -lt 1500 ] && [ ! -f /xfc_swap ]; then
-        echo -e "维度 1 (内存): 正在开启 2G 补丁..."
         fallocate -l 2G /xfc_swap && chmod 600 /xfc_swap && mkswap /xfc_swap && swapon /xfc_swap
         echo '/xfc_swap none swap sw 0 0' >> /etc/fstab
-        echo -e "状态: ${xfc_lv}内存补丁已应用${xfc_bai}"
+        echo -e "状态: ${xfc_lv}2G 内存补丁已应用${xfc_bai}"
     fi
+
+    # [版本] 兼容性检查 (ChatGPT 建议：改为警告而非强制退出)
     if [ -f /etc/os-release ]; then
         . /etc/os-release
         if [[ "$ID" == "ubuntu" && "$VERSION_ID" == "20.04" ]]; then
-            echo -e "维度 2 (版本): ${xfc_hong}Ubuntu 20.04 过旧，请更换 22.04+${xfc_bai}"
-            exit 1
+            echo -e "${xfc_huang}提示: 检测到 Ubuntu 20.04，建议使用 22.04+ 以获得最佳兼容性。${xfc_bai}"
+            read -p "是否继续? (y/N): " u_choice
+            [[ ! "$u_choice" =~ ^[Yy]$ ]] && exit 1
         fi
     fi
+
+    # [DNS] 备份并尝试修复 (ChatGPT 建议)
+    [ ! -f /etc/resolv.conf.bak ] && cp /etc/resolv.conf /etc/resolv.conf.bak 2>/dev/null
+    if ! ping -c 1 -W 3 8.8.8.8 >/dev/null 2>&1; then
+        echo -e "nameserver 8.8.8.8\nnameserver 1.1.1.1" > /etc/resolv.conf
+        echo -e "状态: ${xfc_lv}DNS 已临时修复${xfc_bai}"
+    fi
+
+    # [IPv6] 
     if ip -6 addr | grep -q "global"; then
         export GAI_CONF="/etc/gai.conf"
         alias curl='curl -4'; alias wget='wget -4'
         export NPM_CONFIG_REGISTRY=https://registry.npmmirror.com
-        echo -e "维度 3 (IPv6): ${xfc_lv}已强制走 IPv4 通道${xfc_bai}"
     fi
-    if ! ping -c 1 -W 3 8.8.8.8 >/dev/null 2>&1; then
-        echo -e "nameserver 8.8.8.8\nnameserver 1.1.1.1" > /etc/resolv.conf
-    fi
-    echo -e "维度 5 (端口): 正在扫描冲突..."
-    local check_ports=(18789 8317 2053 443)
-    for p in "${check_ports[@]}"; do
-        local p_info=$(lsof -i :$p -t | xargs ps -p 2>/dev/null | awk 'NR==2 {print $NF}')
-        if [ -n "$p_info" ]; then
-            echo -e "  - 端口 $p : ${xfc_hong}被 [$p_info] 占用${xfc_bai}"
-        fi
-    done
     sleep 1
 }
 
-# --- 3. 环境部署 (Node.js & 快捷键) ---
+# --- 3. 环境部署 ---
 xfc_install_env() {
     local node_ver="v22.14.0"
     local node_path="/opt/xfc_node"
@@ -66,14 +72,14 @@ xfc_install_env() {
         wget -c "https://nodejs.org/dist/$node_ver/$node_bin" -O /tmp/node.tar.xz
         mkdir -p "$node_path"; tar -xJf /tmp/node.tar.xz -C "$node_path" --strip-components=1
         ln -sf "$node_path/bin/node" /usr/local/bin/node; ln -sf "$node_path/bin/npm" /usr/local/bin/npm
-        rm /tmp/node.tar.xz
+        rm -f /tmp/node.tar.xz  # ChatGPT 建议：加 -f
     fi
     if ! command -v openclaw &>/dev/null; then
         echo -e "${xfc_lan}正在安装 OpenClaw (512MB 限制模式)...${xfc_bai}"
         export NODE_OPTIONS="--max-old-space-size=512"
         npm install -g openclaw@latest --family=ipv4 --no-fund --no-audit
     fi
-    # 植入快捷键 xfc
+    # 快捷键 xfc
     local script_path=$(readlink -f "$0")
     ln -sf "$script_path" /usr/local/bin/xfc
     chmod +x /usr/local/bin/xfc
@@ -83,11 +89,19 @@ xfc_install_env() {
 xfc_init_config() {
     echo -e "${xfc_lan}正在注入 12 小时长记忆与 Gemini 预设...${xfc_bai}"
     local config_file="${HOME}/.openclaw/openclaw.json"
-    [ ! -f "$config_file" ] && openclaw onboard --install-daemon >/dev/null 2>&1
+    if [ ! -f "$config_file" ]; then
+        openclaw onboard --install-daemon >/dev/null 2>&1
+    fi
+    
+    # 再次检查文件是否存在 (ChatGPT 建议)
+    if [ ! -f "$config_file" ]; then
+        echo -e "${xfc_hong}错误: openclaw 配置文件初始化失败！${xfc_bai}"
+        return 1
+    fi
+
     python3 -c "
 import json, os
 path = '$config_file'
-if not os.path.exists(path): exit(0)
 with open(path, 'r', encoding='utf-8') as f:
     data = json.load(f)
 data['profile'] = 'full'

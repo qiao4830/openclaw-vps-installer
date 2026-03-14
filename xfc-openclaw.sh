@@ -5,7 +5,7 @@
 # ║             小帆船 (cnxiaofanchuan) - 航海员专用脚本             ║
 # ║                                                                  ║
 # ╠══════════════════════════════════════════════════════════════════╣
-# ║  版本：v1.3.4 | 核心：环境变量修正 | 状态：修复 Command Not Found║
+# ║  版本：v1.3.5 | 核心：路径自动追踪 | 状态：彻底解决模块找不到问题║
 # ╚══════════════════════════════════════════════════════════════════╝
 
 [[ "$(id -u)" -ne 0 ]] && { echo "请使用 root 用户运行"; exit 1; }
@@ -17,7 +17,7 @@ xfc_auto_setup() {
     printf "${xfc_lan}>>> 第一步：正在安装 Node.js 与 OpenClaw 环境...${xfc_bai}\n"
     xfc_install_env
 
-    # 【关键修正 1】强制刷新系统命令哈希表，防止 command not found
+    # 强制刷新路径缓存
     hash -r
 
     if [ ! -f "/usr/local/bin/cli-proxy-api" ]; then
@@ -45,9 +45,15 @@ data = {
 with open(path, 'w') as f:
     json.dump(data, f, indent=2)
 "
-    # 【关键修正 2】使用绝对路径或刷新后的命令，并静默处理
-    /usr/local/bin/node /usr/local/bin/openclaw models remove google 2>/dev/null
-    /usr/local/bin/node /usr/local/bin/openclaw models add google --base-url http://127.0.0.1:8085/v1 --api-key "xfc-free"
+    # 【核心修正】：不再写死绝对路径，使用 which 动态寻找 openclaw 位置
+    # 这样可以完美避开 MODULE_NOT_FOUND 错误
+    OPENCLAW_BIN=$(which openclaw)
+    if [ -z "$OPENCLAW_BIN" ]; then
+        OPENCLAW_BIN="/opt/xfc_node/bin/openclaw"
+    fi
+
+    $OPENCLAW_BIN models remove google 2>/dev/null
+    $OPENCLAW_BIN models add google --base-url http://127.0.0.1:8085/v1 --api-key "xfc-free"
     
     printf "${xfc_lv}✅ 全部流程自动衔接完成！请选择 [2] 启动服务。${xfc_bai}\n"
 }
@@ -63,44 +69,4 @@ xfc_install_env() {
     if [ ! -d "$node_path" ]; then
         local arch=$(uname -m); local node_bin="node-v22.16.0-linux-x64.tar.xz"
         [[ "$arch" == "aarch64" ]] && node_bin="node-v22.16.0-linux-arm64.tar.xz"
-        wget -c "https://nodejs.org/dist/v22.16.0/$node_bin" -O /tmp/node.tar.xz
-        mkdir -p "$node_path"; tar -xJf /tmp/node.tar.xz -C "$node_path" --strip-components=1
-        ln -sf "$node_path/bin/node" /usr/local/bin/node
-        ln -sf "$node_path/bin/npm" /usr/local/bin/npm
-        ln -sf "$node_path/bin/openclaw" /usr/local/bin/openclaw 2>/dev/null # 预建链接
-        rm -f /tmp/node.tar.xz
-    fi
-    npm install -g openclaw@latest --family=ipv4 --engine-strict=false
-    # 强制建立 openclaw 到系统路径，确保万无一失
-    ln -sf "$(which openclaw 2>/dev/null || echo "$node_path/bin/openclaw")" /usr/local/bin/openclaw
-    ln -sf "$(readlink -f "$0")" /usr/local/bin/xfc; chmod +x /usr/local/bin/xfc
-}
-
-xfc_main_menu() {
-    clear
-    printf "${xfc_lan}             小帆船 (cnxiaofanchuan) - 航海员               ${xfc_bai}\n"
-    printf "     ╚════════════════════════════════════════════════════╝\n"
-    printf "  [1] ${xfc_lv}一键安装部署 & 自动授权${xfc_bai} (针对 1G 内存优化)\n"
-    printf "  [2] 启动 OpenClaw & 代理\n"
-    printf "  [3] 停止 OpenClaw & 代理\n"
-    printf "  [4] 机器人 Pairing 授权\n"
-    printf "  [5] 彻底卸载清理\n"
-    printf "  [0] 退出脚本\n\n"
-    read -p "  请选择 [0-5]: " xfc_choice
-    case "$xfc_choice" in
-        1) xfc_auto_setup; read -p "全部完成，回车返回菜单..."; xfc_main_menu ;;
-        2) 
-            lsof -i:8085 >/dev/null 2>&1 || nohup cli-proxy-api run >/dev/null 2>&1 &
-            export NODE_OPTIONS="--max-old-space-size=512"
-            openclaw gateway start
-            read -p "服务已开启，回车返回..."; xfc_main_menu ;;
-        3) openclaw gateway stop; pkill -9 cli-proxy-api; xfc_main_menu ;;
-        4) read -p "连接码: " xfc_pcode; [[ -n "$xfc_pcode" ]] && openclaw pairing approve telegram "$xfc_pcode"; xfc_main_menu ;;
-        5) 
-            read -p "确认卸载吗? (y/N): " u_sure
-            [[ "$u_sure" =~ ^[Yy]$ ]] && { npm uninstall -g openclaw; rm -rf ~/.openclaw /opt/xfc_node /usr/local/bin/xfc /usr/local/bin/cli-proxy-api /xfc_swap; exit 0; }
-            xfc_main_menu ;;
-        *) exit 0 ;;
-    esac
-}
-xfc_main_menu
+        wget -c "https://nodejs.

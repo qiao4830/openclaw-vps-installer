@@ -26,13 +26,16 @@ xfc_system_check() {
     clear
     echo -e "${xfc_lan}>>> 正在执行系统安检与环境优化...${xfc_bai}"
 
-    # [内存] Swap 开启
-    local mem_total=$(free -m | grep Mem | awk '{print $2}')
-    if [ "$mem_total" -lt 1500 ] && [ ! -f /xfc_swap ]; then
-        fallocate -l 2G /xfc_swap && chmod 600 /xfc_swap && mkswap /xfc_swap && swapon /xfc_swap
+    # [内存] Swap 开启（增加 grep 检查防止重复写入）
+local mem_total=$(free -m | grep Mem | awk '{print $2}')
+if [ "$mem_total" -lt 1500 ] && [ ! -f /xfc_swap ]; then
+    fallocate -l 2G /xfc_swap && chmod 600 /xfc_swap && mkswap /xfc_swap && swapon /xfc_swap
+    # 检查 fstab 是否已经存在该记录，不存在才写入
+    if ! grep -q "/xfc_swap" /etc/fstab; then
         echo '/xfc_swap none swap sw 0 0' >> /etc/fstab
-        echo -e "状态: ${xfc_lv}2G 内存补丁已应用${xfc_bai}"
     fi
+    echo -e "状态: ${xfc_lv}2G 内存补丁已应用${xfc_bai}"
+fi
 
     # [版本] 兼容性检查 (ChatGPT 建议：改为警告而非强制退出)
     if [ -f /etc/os-release ]; then
@@ -123,7 +126,7 @@ try:
     # 注入默认模型
     agents = data.setdefault('agents', {})
     defaults = agents.setdefault('defaults', {})
-    defaults['model'] = 'google/gemini-1.5-pro'
+    defaults['model'] = 'gemini-1.5-flash'
 
     # 注入本地网关模式
     data.setdefault('gateway', {})['mode'] = 'local'
@@ -142,36 +145,44 @@ except Exception as e:
 xfc_manage_models() {
     clear
     echo -e "${xfc_lan}--- [ 模型与 API 管理 ] ---${xfc_bai}"
-    echo "  [1] 接入 Gemini (Google 官方)"
-    echo "  [2] 接入 DeepSeek (官方 API)"
-    echo "  [3] 接入自定义 OpenAI 格式 API"
-    echo "  [4] 查看当前配置"
+    echo "  [1] 接入 Gemini (1.5 Flash - 推荐)"
+    echo "  [2] 接入 Gemini (1.5 Pro - 满血)"
+    echo "  [3] 接入 DeepSeek (官方)"
+    echo "  [4] 查看当前生效模型"
     echo "  [0] 返回主菜单"
     echo
     read -p "  请选择: " model_choice
     case "$model_choice" in
-        1)
-            read -p "请输入 Gemini Key: " g_key
+        1|2)
+            read -p "请输入 Gemini API Key: " g_key
             if [ -n "$g_key" ]; then
-                openclaw models add google --api openai-chat-completions --base-url https://generativelanguage.googleapis.com/v1beta/openai/ --api-key "$g_key"
-                openclaw models set google/gemini-1.5-pro
-                openclaw gateway restart; echo -e "${xfc_lv}成功！${xfc_bai}"
-            fi ;;
-        2)
-            read -p "请输入 DeepSeek Key: " d_key
-            if [ -n "$d_key" ]; then
-                openclaw models add deepseek --api openai-chat-completions --base-url https://api.deepseek.com/v1 --api-key "$d_key"
-                openclaw models set deepseek/deepseek-chat
-                openclaw gateway restart; echo -e "${xfc_lv}成功！${xfc_bai}"
+                local m_id="gemini-1.5-flash"
+                [ "$model_choice" == "2" ] && m_id="gemini-1.5-pro"
+                
+                echo -e "${xfc_lan}正在配置 Google Gemini...${xfc_bai}"
+                # 修复 1: 移除 Markdown 括号
+                # 修复 2: 2026版 OpenClaw 默认已集成 OpenAI 协议，移除多余 --api 参数
+				openclaw models remove google 2>/dev/null
+                openclaw models add google --base-url https://generativelanguage.googleapis.com/v1beta/openai/ --api-key "$g_key"
+                openclaw models set "google/$m_id"
+                
+                openclaw gateway restart
+                echo -e "${xfc_lv}✅ 已切换至 $m_id 引擎！${xfc_bai}"
             fi ;;
         3)
-            read -p "名称: " p_name; read -p "Base URL: " p_url; read -p "Key: " p_key; read -p "模型ID: " p_model
-            if [ -n "$p_name" ]; then
-                openclaw models add "$p_name" --api openai-chat-completions --base-url "$p_url" --api-key "$p_key"
-                openclaw models set "${p_name}/${p_model}"
-                openclaw gateway restart; echo -e "${xfc_lv}成功！${xfc_bai}"
+            read -p "请输入 DeepSeek Key: " d_key
+            if [ -n "$d_key" ]; then
+                openclaw models remove deepseek 2>/dev/null # 先删后加，万无一失
+                openclaw models add deepseek --base-url https://api.deepseek.com/v1 --api-key "$d_key"
+                # 在 2026 版中，如果 set 不带前缀报错，则使用标准格式
+                openclaw models set deepseek/deepseek-chat 
+                openclaw gateway restart
+                echo -e "${xfc_lv}✅ 已切换至 DeepSeek 引擎！${xfc_bai}"
             fi ;;
-        4) openclaw models list; read -p "回车继续...";;
+        4)
+            echo -e "${xfc_huang}当前系统配置的模型列表：${xfc_bai}"
+            openclaw models list
+            read -p "按回车继续..." ;;
         *) return ;;
     esac
 }
@@ -207,7 +218,6 @@ xfc_main_menu() {
 			echo -e "${xfc_hong}取消授权：未输入连接码。${xfc_bai}"
 		   fi
 		   read -p "按回车返回菜单..." ; 
-           xfc_main_menu 
            ;;
         5) xfc_manage_models; xfc_main_menu ;;
         6) npm uninstall -g openclaw; rm -rf ~/.openclaw /opt/xfc_node /usr/local/bin/xfc; echo "已清理"; exit 0 ;;

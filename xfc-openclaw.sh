@@ -195,7 +195,20 @@ xfc_main_menu() {
         1) xfc_system_check; xfc_install_env; xfc_init_config; read -p "安装完成！以后输入 xfc 即可唤醒本菜单。回车继续..."; xfc_main_menu ;;
         2) openclaw gateway start; read -p "启动成功，回车返回..."; xfc_main_menu ;;
         3) openclaw gateway stop; read -p "已停止，回车返回..."; xfc_main_menu ;;
-        4) read -p "连接码: " bot_code; openclaw pairing approve telegram "$bot_code"; xfc_main_menu ;;
+        4)
+		   echo -e "${xfc_lan}>>> 正在进入『机器人授权中心』...${xfc_bai}"
+		   echo -e "${xfc_huang}请在 Telegram 机器人对话框中获取 8 位 Pairing code (连接码)${xfc_bai}"
+		   read -p "请输入连接码: " xfc_pcode
+		   if [ ! -z "$xfc_pcode" ]; then
+			# 核心命令：将输入的码传给 OpenClaw 授权
+			openclaw pairing approve telegram "$xfc_pcode"
+			echo -e "${xfc_lv}✅ 授权成功！现在去 Telegram 调教你的机器人吧。${xfc_bai}"
+		   else
+			echo -e "${xfc_hong}取消授权：未输入连接码。${xfc_bai}"
+		   fi
+		   read -p "按回车返回菜单..." ; 
+           xfc_main_menu 
+           ;;
         5) xfc_manage_models; xfc_main_menu ;;
         6) npm uninstall -g openclaw; rm -rf ~/.openclaw /opt/xfc_node /usr/local/bin/xfc; echo "已清理"; exit 0 ;;
         0) exit 0 ;;

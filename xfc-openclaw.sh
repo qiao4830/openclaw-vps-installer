@@ -123,7 +123,7 @@ try:
     # 注入默认模型
     agents = data.setdefault('agents', {})
     defaults = agents.setdefault('defaults', {})
-    defaults['model'] = 'google/gemini-pro'
+    defaults['model'] = 'google/gemini-1.5-pro'
 
     # 注入本地网关模式
     data.setdefault('gateway', {})['mode'] = 'local'

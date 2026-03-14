@@ -62,7 +62,7 @@ xfc_system_check() {
 
 # --- 3. 环境部署 ---
 xfc_install_env() {
-    local node_ver="v22.16.1"
+    local node_ver="v22.16.0"
     local node_path="/opt/xfc_node"
     if [ ! -d "$node_path" ]; then
         echo -e "${xfc_lan}正在部署 Node.js 环境 ($node_ver)...${xfc_bai}"

@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
-# 权限与环境检查
+# 权限检查
 [[ "$(id -u)" -ne 0 ]] && { printf "Error: Please run as root\n"; exit 1; }
 
-# 深度优化逻辑
+# 深度优化
 xfc_system_check() {
     clear
     printf ">>> 正在执行低配机生存优化...\n"
@@ -13,8 +13,6 @@ xfc_system_check() {
         grep -q "/xfc_swap" /etc/fstab || echo '/xfc_swap none swap sw 0 0' >> /etc/fstab
     fi
     export NODE_OPTIONS="--max-old-space-size=512"
-    export NODE_COMPILE_CACHE=/var/tmp/openclaw-compile-cache
-    mkdir -p /var/tmp/openclaw-compile-cache
 }
 
 # 环境部署
@@ -60,24 +58,28 @@ json.dump(data, open(path, 'w'), indent=2)
     printf "✅ OAuth 绑定成功！\n"
 }
 
-# 菜单重绘 (彻底移除所有变量，直接硬编码字符)
+# --- 菜单重绘 (完全取消左右分栏，直接竖排，100% 对齐) ---
 xfc_main_menu() {
     clear
-    printf "--------------------------------------------------------------\n"
-    printf "         小帆船 (cnxiaofanchuan) - 航海员专用脚本 v1.2.6      \n"
-    printf "--------------------------------------------------------------\n"
-    printf "  [1] 安装环境  |  [2] OAuth 授权  |  [3] 启动 OpenClaw\n"
-    printf "  [4] 停止 OpenClaw  |  [5] 机器人授权  |  [6] 彻底卸载\n"
+    printf "================================================\n"
+    printf "   小帆船 (cnxiaofanchuan) 航海员专用脚本 v1.2.6 \n"
+    printf "================================================\n"
+    printf "  [1] 安装部署环境 (低配优化模式)\n"
+    printf "  [2] Google OAuth 授权 (零隧道白嫖)\n"
+    printf "  [3] 启动 OpenClaw 服务\n"
+    printf "  [4] 停止 OpenClaw 服务\n"
+    printf "  [5] 机器人 Pairing 授权\n"
+    printf "  [6] 彻底卸载清理\n"
     printf "  [0] 退出脚本\n"
-    printf "--------------------------------------------------------------\n"
+    printf "================================================\n"
     printf "\n"
-    read -p "  请选择: " xfc_choice
+    read -p "  请输入数字选择: " xfc_choice
     case "$xfc_choice" in
         1) xfc_system_check; xfc_install_env; read -p "完成，回车继续..."; xfc_main_menu ;;
         2) xfc_auth_google; read -p "完成，回车继续..."; xfc_main_menu ;;
-        3) export NODE_OPTIONS="--max-old-space-size=512"; openclaw gateway start; read -p "已启动..."; xfc_main_menu ;;
+        3) export NODE_OPTIONS="--max-old-space-size=512"; openclaw gateway start; read -p "已启动，回车继续..."; xfc_main_menu ;;
         4) openclaw gateway stop; read -p "已停止..."; xfc_main_menu ;;
-        5) read -p "Pairing code: " xfc_pcode; [[ -n "$xfc_pcode" ]] && openclaw pairing approve telegram "$xfc_pcode"; xfc_main_menu ;;
+        5) read -p "连接码: " xfc_pcode; [[ -n "$xfc_pcode" ]] && openclaw pairing approve telegram "$xfc_pcode"; xfc_main_menu ;;
         6) npm uninstall -g openclaw; rm -rf ~/.openclaw /opt/xfc_node /usr/local/bin/xfc /usr/local/bin/cli-proxy-api; exit 0 ;;
         0) exit 0 ;;
         *) xfc_main_menu ;;

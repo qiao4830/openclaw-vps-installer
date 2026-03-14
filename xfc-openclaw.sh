@@ -185,7 +185,7 @@ xfc_main_menu() {
     echo -e "  [1] ${xfc_lv}一键极简安装${xfc_bai} (针对 1G 内存优化)"
     echo -e "  [2] 启动 OpenClaw"
     echo -e "  [3] 停止 OpenClaw"
-    echo -e "  [4] 对接机器人 (连接码)"
+    echo -e "  [4] 机器人授权"
     echo -e "  [5] 换模型 / 填 Key"
     echo -e "  [6] ${xfc_hong}彻底卸载${xfc_bai}"
     echo -e "  [0] 退出脚本"

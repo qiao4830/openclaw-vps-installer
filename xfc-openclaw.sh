@@ -160,8 +160,8 @@ xfc_manage_models() {
 # --- 6. 主菜单 ---
 xfc_main_menu() {
     clear
-    echo -e "${xfc_lan}  ╔══════════════════════════════════════════════════════════╗"
-    echo "               ║             小帆船 (cnxiaofanchuan) - 航海员              ║"
+    echo -e "${xfc_lan}  "
+    echo "                             小帆船 (cnxiaofanchuan) - 航海员               "
     echo -e "            ╚══════════════════════════════════════════════════════════╝${xfc_bai}"
     echo -e "  [1] ${xfc_lv}一键极简安装${xfc_bai} (针对 1G 内存优化)"
     echo -e "  [2] 启动 OpenClaw"

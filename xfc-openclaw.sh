@@ -62,10 +62,11 @@ xfc_system_check() {
 
 # --- 3. 环境部署 ---
 xfc_install_env() {
-    local node_ver="v22.14.0"
+    local node_ver="v22.16.1"
     local node_path="/opt/xfc_node"
     if [ ! -d "$node_path" ]; then
-        echo -e "${xfc_lan}正在部署 Node.js 环境...${xfc_bai}"
+        echo -e "${xfc_lan}正在部署 Node.js 环境 ($node_ver)...${xfc_bai}"
+        # 核心：加入 git 依赖
         apt update -y && apt install -y xz-utils wget lsof python3 git
         local arch=$(uname -m); local node_bin="node-$node_ver-linux-x64.tar.xz"
         [ "$arch" == "aarch64" ] && node_bin="node-$node_ver-linux-arm64.tar.xz"
@@ -77,7 +78,8 @@ xfc_install_env() {
     if ! command -v openclaw &>/dev/null; then
         echo -e "${xfc_lan}正在安装 OpenClaw (512MB 限制模式)...${xfc_bai}"
         export NODE_OPTIONS="--max-old-space-size=512"
-        npm install -g openclaw@latest --family=ipv4 --no-fund --no-audit
+        # 核心：加入 --engine-strict=false 强行适配版本
+        npm install -g openclaw@latest --family=ipv4 --no-fund --no-audit --engine-strict=false
     fi
     # 快捷键 xfc
     local script_path=$(readlink -f "$0")

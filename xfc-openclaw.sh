@@ -89,34 +89,53 @@ xfc_install_env() {
 
 # --- 4. 初始化配置 ---
 xfc_init_config() {
-    echo -e "${xfc_lan}正在注入 12 小时长记忆与 Gemini 预设...${xfc_bai}"
     local config_file="${HOME}/.openclaw/openclaw.json"
+
+    # 1. 强制清理旧配置，确保 onboard 能够弹出
+    rm -f "$config_file"
+
+    # 2. 核心动作：显式唤起官方配置向导 (不再静音)
+    echo -e "${xfc_lan}>>> 准备进入官方配置向导，请在随后出现的蓝框中完成核心配置...${xfc_bai}"
+    sleep 2
+    openclaw onboard
+
+    # 再次检查文件是否存在
     if [ ! -f "$config_file" ]; then
-        openclaw onboard --install-daemon >/dev/null 2>&1
-    fi
-    
-    # 再次检查文件是否存在 (ChatGPT 建议)
-    if [ ! -f "$config_file" ]; then
-        echo -e "${xfc_hong}错误: openclaw 配置文件初始化失败！${xfc_bai}"
+        echo -e "${xfc_hong}错误: openclaw 配置文件未生成，初始化失败！${xfc_bai}"
         return 1
     fi
 
+    echo -e "${xfc_lan}正在注入博主特供优化 (12 小时长记忆与 Gemini 预设)...${xfc_bai}"
+
+    # 使用 python3 精准注入 JSON 配置
     python3 -c "
 import json, os
 path = '$config_file'
-with open(path, 'r', encoding='utf-8') as f:
-    data = json.load(f)
-data['profile'] = 'full'
-session = data.setdefault('session', {})
-session['resetTriggers'] = ['/reset', '/new', '重置对话']
-session['reset'] = {'mode': 'idle', 'idleMinutes': 720}
-agents = data.setdefault('agents', {})
-defaults = agents.setdefault('defaults', {})
-defaults['model'] = 'google/gemini-pro'
-data.setdefault('gateway', {})['logLevel'] = 'info'
-with open(path, 'w', encoding='utf-8') as f:
-    json.dump(data, f, indent=2, ensure_ascii=False)
+try:
+    with open(path, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+
+    # 注入长记忆配置 (720分钟 = 12小时)
+    session = data.setdefault('session', {})
+    session['resetTriggers'] = ['/reset', '/new', '/重置对话']
+    session['reset'] = {'mode': 'idle', 'idleMinutes': 720}
+
+    # 注入默认模型
+    agents = data.setdefault('agents', {})
+    defaults = agents.setdefault('defaults', {})
+    defaults['model'] = 'google/gemini-pro'
+
+    # 注入本地网关模式
+    data.setdefault('gateway', {})['mode'] = 'local'
+
+    with open(path, 'w', encoding='utf-8') as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+except Exception as e:
+    print(f'Error: {e}')
+    exit(1)
 "
+    # 注意：echo 必须在双引号外面
+    echo -e "${xfc_lv}✅ 优化配置注入成功！${xfc_bai}"
 }
 
 # --- 5. 模型与 API 管理 ---

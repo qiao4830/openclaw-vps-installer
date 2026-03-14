@@ -5,8 +5,7 @@
 # ║             小帆船 (cnxiaofanchuan) - 航海员专用脚本             ║
 # ║                                                                  ║
 # ╠══════════════════════════════════════════════════════════════════╣
-# ║  版本：v1.3.2 | 核心：Joye 逻辑前置授权 | 状态：纯净 URL 修正    ║
-# ║  YouTube : @cnxiaofanchuan  |  Telegram: t.me/vipxiaofanchuan    ║
+# ║  版本：v1.3.3 | 核心：Joye 顺序复刻版 | 状态：逻辑深度对齐       ║
 # ╚══════════════════════════════════════════════════════════════════╝
 
 # 0. 权限检查
@@ -15,33 +14,32 @@
 # 颜色定义
 xfc_lv='\033[32m'; xfc_lan='\033[96m'; xfc_huang='\033[33m'; xfc_bai='\033[0m'
 
-# --- 1. 核心指挥官：前置授权与自动衔接 ---
+# --- 1. 核心指挥官 (严格对齐 Joye 顺序) ---
 xfc_auto_setup() {
     clear
-    # A. 预装基础工具 (授权必须)
-    printf "${xfc_lan}>>> 正在准备授权环境...${xfc_bai}\n"
-    apt update -y && apt install -y wget curl lsof python3 ca-certificates
+    
+    # 第一步：先装地基 (Node.js & OpenClaw)
+    # 没有这些，后面的 openclaw models add 命令会直接报错
+    printf "${xfc_lan}>>> 第一步：正在安装 Node.js 与 OpenClaw 环境...${xfc_bai}\n"
+    xfc_install_env
 
-    # B. 立即获取 Joye 代理组件
+    # 第二步：下载白嫖组件
     if [ ! -f "/usr/local/bin/cli-proxy-api" ]; then
+        printf "${xfc_lan}>>> 第二步：正在获取 OAuth 授权组件...${xfc_bai}\n"
         local p_arch="amd64"; [[ "$(uname -m)" == "aarch64" ]] && p_arch="arm64"
         wget -qO /usr/local/bin/cli-proxy-api "https://github.com/Joye-at-GitHub/cli-proxy-api/releases/latest/download/cli-proxy-api-linux-$p_arch"
         chmod +x /usr/local/bin/cli-proxy-api
     fi
 
-    # C. 【核心步骤】前置 OAuth 授权 - 没拿到 Token 绝不往下走
-    printf "${xfc_huang}>>> 第一步：进行 Google OAuth 授权 (至关重要)${xfc_bai}\n"
-    printf "1. 请复制随后出现的链接到浏览器打开并授权。\n"
-    printf "2. 授权后页面报错属于正常，请复制地址栏【完整 URL】粘贴到下方：\n"
+    # 第三步：【核心衔接】立即唤起授权
+    # 此时 Node 已经装好，环境变量已经就绪
+    printf "${xfc_huang}>>> 第三步：进入 Google OAuth 授权流程 (零隧道)...${xfc_bai}\n"
+    printf "授权后，请直接复制地址栏完整 URL 粘贴到下方：\n"
     sleep 1
     /usr/local/bin/cli-proxy-api auth
 
-    # D. 授权成功后，开始后台静默安装环境
-    printf "${xfc_lan}>>> 第二步：授权成功！正在部署 Node.js 与 OpenClaw 核心...${xfc_bai}\n"
-    xfc_install_env
-
-    # E. 自动注入配置并对接本地网关
-    printf "${xfc_lan}>>> 第三步：正在自动对接本地代理网关...${xfc_bai}\n"
+    # 第四步：自动配置注入
+    printf "${xfc_lan}>>> 第四步：正在自动对接网关与模型接口...${xfc_bai}\n"
     mkdir -p "${HOME}/.openclaw"
     python3 -c "
 import json, os
@@ -54,15 +52,18 @@ data = {
 with open(path, 'w') as f:
     json.dump(data, f, indent=2)
 "
-    # 彻底清理旧模型，强行挂载白嫖接口 (纯净 URL)
+    # 利用刚装好的 node 运行 openclaw 命令
     openclaw models remove google 2>/dev/null
-    openclaw models add google --base-url http://127.0.0.1:8085/v1 --api-key "xfc-free-token"
+    openclaw models add google --base-url http://127.0.0.1:8085/v1 --api-key "xfc-free"
     
-    printf "${xfc_lv}✅ 全部流程衔接完成！博主请选择 [2] 启动服务。${xfc_bai}\n"
+    printf "${xfc_lv}✅ 全部流程自动衔接完成！请选择 [2] 启动服务。${xfc_bai}\n"
 }
 
-# --- 2. 基础环境安装 (被动调用) ---
+# --- 2. 基础环境安装 ---
 xfc_install_env() {
+    # 基础依赖
+    apt update -y && apt install -y wget curl lsof python3 ca-certificates xz-utils git
+
     # 内存补丁
     local mem_total=$(free -m | grep Mem | awk '{print $2}')
     if [ "$mem_total" -lt 1500 ] && [ ! -f /xfc_swap ]; then
@@ -80,7 +81,7 @@ xfc_install_env() {
         ln -sf "$node_path/bin/npm" /usr/local/bin/npm
         rm -f /tmp/node.tar.xz
     fi
-    # 安装大脑
+    # 安装 OpenClaw
     command -v openclaw &>/dev/null || npm install -g openclaw@latest --family=ipv4 --engine-strict=false
     ln -sf "$(readlink -f "$0")" /usr/local/bin/xfc; chmod +x /usr/local/bin/xfc
 }
@@ -110,7 +111,7 @@ xfc_main_menu() {
             sleep 1; xfc_main_menu ;;
         4) read -p "连接码: " xfc_pcode; [[ -n "$xfc_pcode" ]] && openclaw pairing approve telegram "$xfc_pcode"; xfc_main_menu ;;
         5) 
-            read -p "确认彻底卸载吗? (y/N): " u_sure
+            read -p "确认卸载清理吗? (y/N): " u_sure
             if [[ "$u_sure" =~ ^[Yy]$ ]]; then
                 npm uninstall -g openclaw; rm -rf ~/.openclaw /opt/xfc_node /usr/local/bin/xfc /usr/local/bin/cli-proxy-api /xfc_swap; exit 0
             fi; xfc_main_menu ;;

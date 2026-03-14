@@ -66,7 +66,7 @@ xfc_install_env() {
     local node_path="/opt/xfc_node"
     if [ ! -d "$node_path" ]; then
         echo -e "${xfc_lan}正在部署 Node.js 环境...${xfc_bai}"
-        apt update -y && apt install -y xz-utils wget lsof python3
+        apt update -y && apt install -y xz-utils wget lsof python3 git
         local arch=$(uname -m); local node_bin="node-$node_ver-linux-x64.tar.xz"
         [ "$arch" == "aarch64" ] && node_bin="node-$node_ver-linux-arm64.tar.xz"
         wget -c "https://nodejs.org/dist/$node_ver/$node_bin" -O /tmp/node.tar.xz

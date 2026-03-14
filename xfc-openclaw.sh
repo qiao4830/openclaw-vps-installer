@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 
 # 0. Root 检查
-[[ "$(id -u)" -ne 0 ]] && { echo "Error: Must run as root"; exit 1; }
+[[ "$(id -u)" -ne 0 ]] && { printf "\033[31mError: 请使用 root 用户运行\033[0m\n"; exit 1; }
 
-# --- 1. 颜色恢复 (全兼容模式) ---
-xfc_lv="\033[32m"; xfc_lan="\033[96m"; xfc_huang="\033[33m"; xfc_hong="\033[31m"; xfc_bai="\033[0m"
+# --- 1. 颜色定义 (兼容性最强的定义方式) ---
+lv="\033[32m"; lan="\033[96m"; huang="\033[33m"; hong="\033[31m"; bai="\033[0m"
 
-# --- 2. 深度优化 ---
+# --- 2. 系统深度优化 ---
 xfc_system_check() {
     clear
-    echo -e "${xfc_lan}>>> 正在执行低配机生存优化...${xfc_bai}"
+    printf "${lan}>>> 正在执行低配机生存优化...${bai}\n"
     local mem_total=$(free -m | grep Mem | awk '{print $2}')
     if [ "$mem_total" -lt 1500 ] && [ ! -f /xfc_swap ]; then
         fallocate -l 2G /xfc_swap && chmod 600 /xfc_swap && mkswap /xfc_swap && swapon /xfc_swap
@@ -45,7 +45,7 @@ xfc_install_env() {
 # --- 4. OAuth 逻辑 ---
 xfc_auth_google() {
     clear
-    echo -e "${xfc_lan}>>> 授权后直接复制报错页面的 URL 粘贴到下方：${xfc_bai}"
+    printf "${lan}>>> 授权后直接复制报错页面的 URL 粘贴到下方：${bai}\n"
     cli-proxy-api auth
     local config_file="${HOME}/.openclaw/openclaw.json"
     python3 -c "
@@ -60,26 +60,26 @@ json.dump(data, open(path, 'w'), indent=2)
     openclaw models remove google 2>/dev/null
     openclaw models add google --base-url http://127.0.0.1:8085/v1 --api-key "xfc-free"
     openclaw models set "google/gemini-1.5-flash-latest"
-    echo -e "${xfc_lv}✅ OAuth 绑定成功！${xfc_bai}"
+    printf "${lv}✅ OAuth 绑定成功！${bai}\n"
 }
 
-# --- 5. 菜单重绘 ---
+# --- 5. 菜单重绘 (修正排版) ---
 xfc_main_menu() {
     clear
-    echo -e "${xfc_lan}╔════════════════════════════════════════════════════════════╗${xfc_bai}"
-    echo -e "║${xfc_bai}         小帆船 (cnxiaofanchuan) - 航海员专用脚本 v1.2.6    ${xfc_lan}║${xfc_bai}"
-    echo -e "${xfc_lan}╠════════════════════════════════════════════════════════════╣${xfc_bai}"
-    echo -e "  [1] ${xfc_lv}安装环境${xfc_bai}  |  [2] ${xfc_huang}OAuth 授权${xfc_bai}  |  [3] 启动 OpenClaw"
-    echo -e "  [4] 停止 OpenClaw  |  [5] 机器人授权   |  [6] ${xfc_hong}卸载清理${xfc_bai}"
-    echo -e "  [0] 退出脚本"
-    echo -e "${xfc_lan}╚════════════════════════════════════════════════════════════╝${xfc_bai}"
-    echo
+    printf "${lan}╔════════════════════════════════════════════════════════════╗${bai}\n"
+    printf "${lan}║${bai}         小帆船 (cnxiaofanchuan) - 航海员专用脚本 v1.2.6    ${lan}║${bai}\n"
+    printf "${lan}╠════════════════════════════════════════════════════════════╣${bai}\n"
+    printf "  [1] ${lv}安装环境${bai}  |  [2] ${huang}OAuth 授权${bai}  |  [3] 启动 OpenClaw\n"
+    printf "  [4] 停止 OpenClaw  |  [5] 机器人授权   |  [6] ${hong}卸载清理${bai}\n"
+    printf "  [0] 退出脚本\n"
+    printf "${lan}╚════════════════════════════════════════════════════════════╝${bai}\n"
+    printf "\n"
     read -p "  请选择: " xfc_choice
     case "$xfc_choice" in
-        1) xfc_system_check; xfc_install_env; read -p "Done. Enter..."; xfc_main_menu ;;
-        2) xfc_auth_google; read -p "Done. Enter..."; xfc_main_menu ;;
-        3) export NODE_OPTIONS="--max-old-space-size=512"; openclaw gateway start; read -p "Started..."; xfc_main_menu ;;
-        4) openclaw gateway stop; read -p "Stopped..."; xfc_main_menu ;;
+        1) xfc_system_check; xfc_install_env; read -p "完成，回车继续..."; xfc_main_menu ;;
+        2) xfc_auth_google; read -p "完成，回车继续..."; xfc_main_menu ;;
+        3) export NODE_OPTIONS="--max-old-space-size=512"; openclaw gateway start; read -p "已启动，回车继续..."; xfc_main_menu ;;
+        4) openclaw gateway stop; read -p "已停止..."; xfc_main_menu ;;
         5) read -p "Pairing code: " xfc_pcode; [[ -n "$xfc_pcode" ]] && openclaw pairing approve telegram "$xfc_pcode"; xfc_main_menu ;;
         6) npm uninstall -g openclaw; rm -rf ~/.openclaw /opt/xfc_node /usr/local/bin/xfc /usr/local/bin/cli-proxy-api /xfc_swap; exit 0 ;;
         0) exit 0 ;;

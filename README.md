@@ -21,7 +21,7 @@
 
 ## 安装
 
-    curl -fsSL https://raw.githubusercontent.com/qiao4830/openclaw-vps-installer/main/openclaw-lite.sh -o openclaw-lite.sh && chmod +x openclaw-lite.sh && sudo bash openclaw-lite.sh
+    curl -fsSL https://raw.githubusercontent.com/qiao4830/openclaw-vps-installer/main/xfc-openclaw.sh -o xfc.sh && chmod +x xfc.sh && bash xfc.sh
 
 ## 可选模式
 
